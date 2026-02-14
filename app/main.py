@@ -1,15 +1,29 @@
+# app/main.py
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from .routers import books
+from .init_db import create_tables
 
+# --- Lifespan ---
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_tables()
+    yield
+    print("Hasta la próxima!")
+
+# --- Inicialización de la app ---
 app = FastAPI(
-    title="API de Items",
-    description="API para gestión de items con FastAPI",
-    version="1.0.0"
+    title="Librería API",
+    description="API profesional para gestión de libros",
+    version="1.0.0",
+    lifespan=lifespan
 )
 
+# --- RUTAS ---
 @app.get("/")
 def read_root():
-    return {"mensaje": "Hola mundo!."}
+    return {"mensaje": "Bienvenido a la Librería API. Ve a /docs para comenzar."}
 
-@app.get("/saludo/{nombre}")
-def read_item(nombre: str):
-    return {"saludo": f"Hola, {nombre}!"}   
+# Incluimos los routers (Controladores)
+app.include_router(books.router)
