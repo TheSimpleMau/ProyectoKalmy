@@ -1,7 +1,8 @@
 # app/main.py
 from fastapi import FastAPI
+from fastapi.templating import Jinja2Templates
 from contextlib import asynccontextmanager
-from .routers import books
+from .routers import books, auth, web
 from .init_db import create_tables
 
 # --- Lifespan ---
@@ -20,10 +21,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# --- RUTAS ---
-@app.get("/")
-def read_root():
-    return {"mensaje": "Bienvenido a la Librería API. Ve a /docs para comenzar."}
+# --- Template ---
+templates = Jinja2Templates(directory="app/templates")
 
-# Incluimos los routers (Controladores)
+# --- Rutas ---
+app.include_router(auth.router)
 app.include_router(books.router)
+app.include_router(web.router)

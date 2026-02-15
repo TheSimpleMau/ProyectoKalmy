@@ -1,6 +1,9 @@
 # app/init_db.py
+import logging
 from sqlalchemy.orm import Session
-from . import models, database
+from . import models, database, auth
+
+logger = logging.getLogger("uvicorn")
 
 def create_tables():
     """
@@ -14,7 +17,7 @@ def create_tables():
     try:
         # Si no existen libros, iniciamos la base de datos con datos dummy.
         if db.query(models.Book).count() == 0:
-            print("--- Base de datos vacía. Sembrando datos de prueba... ---")
+            logger.info("--- Base de datos vacía. Sembrando datos de prueba... ---")
             libros_iniciales = [
                 models.Book(name="La sombra del viento", author="Carlos Ruiz Zafón", description="Misterio literario en Barcelona", price=18.50, available=True),
                 models.Book(name="Diccionario jázaro", author="Milorad Pavić", description="Novela experimental en forma de diccionario", price=22.00, available=True),
@@ -66,11 +69,27 @@ def create_tables():
             
             db.add_all(libros_iniciales)
             db.commit()
-            print("--- Datos dummy hechos ---")
+            logger.info("--- Datos dummy hechos ---")
         else:
-            print("--- La base de datos ya tiene datos. Omitiendo. ---")
+            logger.info("--- La base de datos ya tiene datos. Omitiendo. ---")
+
+        # --- Usuario Admin ---
+        if db.query(models.User).count() == 0:
+            logger.info("--- Creando usuario Admin... ---")
+            hashed_pwd = auth.get_password_hash("admin123")
+            admin_user = models.User(username="admin", hashed_password=hashed_pwd)
+            db.add(admin_user)
+            db.commit()
+            logger.info("--- Usuario 'admin' con password 'admin123' creado ---")
+            
+            logger.info("--- Creando usuario Test... ---")
+            hashed_pwd = auth.get_password_hash("test123")
+            admin_user = models.User(username="test", hashed_password=hashed_pwd)
+            db.add(admin_user)
+            db.commit()
+            logger.info("--- Usuario 'test' con password 'test123' creado ---")
             
     except Exception as e:
-        print(f"Error durante la inicialización de la DB: {e}")
+        logger.error(f"Error durante la inicialización de la DB: {e}")
     finally:
         db.close()

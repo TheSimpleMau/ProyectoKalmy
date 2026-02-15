@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        /* Ajuste para que las tarjetas de libros se vean en cuadrícula */
+        .book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="container">
+        <nav>
+            <ul>
+                <li><strong>📚 {{ title }}</strong></li>
+            </ul>
+            <ul>
+                <li><small>Hola, {{ user }}</small></li> <li><a href="/docs" role="button" class="secondary">Ver API Docs</a></li>
+                <li><a href="/logout" role="button" class="contrast">Cerrar Sesión</a></li> 
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container">
+        <hgroup>
+            <h2>Catálogo de Libros</h2>
+            <p>Explora nuestra colección gestionada con FastAPI</p>
+        </hgroup>
+
+        <div class="book-grid">
+            {% for book in books %}
+            <article>
+                <header>
+                    <strong>{{ book.name }}</strong>
+                </header>
+                
+                <p>{{ book.author }}</p>
+                <small>{{ book.description }}</small>
+                
+                <footer>
+                    <div class="grid">
+                        <button class="outline" disabled>${{ book.price }}</button>
+                        
+                        {% if book.available %}
+                            <button class="contrast" disabled>Disponible</button>
+                        {% else %}
+                            <button class="secondary" disabled>Agotado</button>
+                        {% endif %}
+                    </div>
+                </footer>
+            </article>
+            {% endfor %}
+        </div>
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        article { width: 100%; max-width: 400px; }
+    </style>
+</head>
+<body>
+
+    <main class="container">
+        <article>
+            <header>
+                <strong>🔐 Iniciar Sesión</strong>
+            </header>
+            
+            <form method="post" action="/login">
+                <label for="username">
+                    Usuario
+                    <input type="text" name="username" placeholder="Ej: admin" required>
+                </label>
+                
+                <label for="password">
+                    Contraseña
+                    <input type="password" name="password" placeholder="******" required>
+                </label>
+                
+                <button type="submit">Entrar</button>
+            </form>
+            
+            {% if error %}
+            <div role="alert" style="background-color: #ffe6e6; color: #cc0000; padding: 10px; border-radius: 5px; text-align: center;">
+                {{ error }}
+            </div>
+            {% endif %}
+
+        </article>
+    </main>
+
+    </body>
+</html>
