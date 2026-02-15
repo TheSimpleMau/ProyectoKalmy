@@ -77,14 +77,14 @@ def create_tables():
         if db.query(models.User).count() == 0:
             logger.info("--- Creando usuario Admin... ---")
             hashed_pwd = auth.get_password_hash("admin123")
-            admin_user = models.User(username="admin", hashed_password=hashed_pwd)
+            admin_user = models.User(username="admin", hashed_password=hashed_pwd, role="admin")
             db.add(admin_user)
             db.commit()
             logger.info("--- Usuario 'admin' con password 'admin123' creado ---")
             
             logger.info("--- Creando usuario Test... ---")
             hashed_pwd = auth.get_password_hash("test123")
-            admin_user = models.User(username="test", hashed_password=hashed_pwd)
+            admin_user = models.User(username="test", hashed_password=hashed_pwd, role="user")
             db.add(admin_user)
             db.commit()
             logger.info("--- Usuario 'test' con password 'test123' creado ---")
