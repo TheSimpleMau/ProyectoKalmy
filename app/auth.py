@@ -20,14 +20,27 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Verificar password (Login)
 def verify_password(plain_password, hashed_password):
+    """
+    Compara una contraseña en texto plano con un hash encriptado (bcrypt).
+    Retorna True si la contraseña coincide con el hash, de lo contrario False.
+    """
     return pwd_context.verify(plain_password, hashed_password)
 
 # Generar hash (Registro)
 def get_password_hash(password):
+    """
+    Genera un hash seguro utilizando el algoritmo bcrypt a partir de una contraseña en texto plano.
+    """
     return pwd_context.hash(password)
 
 # Crear JWT
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """
+    Crea y firma un JSON Web Token (JWT) para mantener la sesión del usuario.
+    - **data**: Diccionario con la información a codificar (generalmente el 'sub' con el nombre de usuario).
+    - **expires_delta**: Tiempo de validez del token. Si no se provee, expira en 15 minutos por defecto.
+    Retorna el token codificado como un string.
+    """
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -40,6 +53,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 # Validar JWT
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
+    """
+    Dependencia de FastAPI para proteger rutas y obtener el usuario autenticado actualmente.
+    1. Extrae el token JWT del encabezado 'Authorization: Bearer <token>'.
+    2. Decodifica y valida la firma del token.
+    3. Extrae el nombre de usuario y lo busca en la base de datos.
+    
+    Si el token es inválido, ha expirado, o el usuario ya no existe, lanza un error HTTP 401 Unauthorized.
+    
+    Retorna el objeto del usuario (models.User) si la validación es exitosa.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="No se pudieron validar las credenciales",

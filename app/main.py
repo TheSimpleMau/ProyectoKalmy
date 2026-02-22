@@ -14,10 +14,23 @@ async def lifespan(app: FastAPI):
     print("Hasta la próxima!")
 
 # --- Inicialización de la app ---
+
+tags_metadata = [
+    {
+        "name": "auth",
+        "description": "Operaciones con usuarios. Incluye el registro y el inicio de sesión.",
+    },
+    {
+        "name": "items",
+        "description": "Gestión del inventario de libros. Permite crear, leer, actualizar y borrar (CRUD).",
+    }
+]
+
 app = FastAPI(
     title="Librería Kalmy",
     description="API para gestión de libros",
     version="1.0.0",
+    openapi_tags=tags_metadata,
     lifespan=lifespan
 )
 

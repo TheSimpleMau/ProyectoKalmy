@@ -80,7 +80,7 @@
                             </button>
 
                         {% elif user.role == 'user' %}
-                            {% if item.stock > 0 and item.avilable%}
+                            {% if item.stock > 0 and item.available%}
                                 <form action="/buy/{{ item.id }}" method="post" style="display: inline;">
                                     <button type="submit" style="background-color: #28a745; border-color: #28a745;">🛒 Comprar</button>
                                 </form>
