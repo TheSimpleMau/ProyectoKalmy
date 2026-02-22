@@ -8,20 +8,16 @@
     <style>
         .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .admin-badge { background-color: #d81b60; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; }
+        .fading-out { opacity: 0; transition: opacity 0.5s ease-out; }
     </style>
 </head>
 <body>
 
     <header class="container">
         <nav>
+            <ul><li><strong>📚 {{ title }}</strong></li></ul>
             <ul>
-                <li><strong>📚 {{ title }}</strong></li>
-            </ul>
-            <ul>
-                <li>
-                    Hola, {{ user.username }}
-                    {% if user.role == 'admin' %} <span class="admin-badge">ADMIN</span> {% endif %}
-                </li>
+                <li>Hola, {{ user.username }} {% if user.role == 'admin' %} <span class="admin-badge">ADMIN</span> {% endif %}</li>
                 <li><a href="/logout" role="button" class="contrast outline">Salir</a></li>
             </ul>
         </nav>
@@ -30,49 +26,112 @@
     <main class="container">
         
         {% if user.role == 'admin' %}
-        <details>
+        <details class="mb-4">
             <summary role="button" class="secondary">➕ Agregar Nuevo Libro</summary>
             <article>
                 <form action="/create" method="post">
                     <div class="grid">
-                        <input type="text" name="name" placeholder="Título del libro" required>
+                        <input type="text" name="name" placeholder="Título" required>
                         <input type="text" name="author" placeholder="Autor" required>
                     </div>
                     <div class="grid">
-                        <input type="number" step="0.01" name="price" placeholder="Precio ($)" required>
-                        <input type="text" name="description" placeholder="Descripción breve" required>
+                        <input type="number" step="0.01" name="price" placeholder="Precio" required>
+                        <input type="text" name="description" placeholder="Descripción" required>
+                        
+                        <input type="number" name="stock" placeholder="Cantidad (Stock)" required min="0">
+                        
                     </div>
                     <button type="submit">Guardar Libro</button>
                 </form>
             </article>
         </details>
-        <hr>
         {% endif %}
 
         <div class="book-grid">
             {% for book in books %}
-            <article>
+            <article id="book-card-{{ book.id }}">
                 <header>
                     <strong>{{ book.name }}</strong>
+                    
+                    {% if book.stock > 0 %}
+                        <span style="float: right; color: #388e3c; font-size: 0.8em; font-weight: bold;">✅ Disponible</span>
+                    {% else %}
+                        <span style="float: right; color: #d32f2f; font-size: 0.8em; font-weight: bold;">🚫 Fuera del inventario</span>
+                    {% endif %}
                 </header>
+                
                 <small>{{ book.author }}</small>
                 <p>{{ book.description }}</p>
                 
+                {% if user.role == 'admin' or user.role == 'employee' %}
+                <div style="background-color: var(--pico-muted-border-color); padding: 5px 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">
+                    <small>📦 Inventario actual: <strong>{{ book.stock }}</strong> unidades</small>
+                </div>
+                {% endif %}
+
                 <footer>
                     <div class="grid">
-                        <button class="outline" disabled>${{ book.price }}</button>
-                        
                         {% if user.role == 'admin' %}
-                            <form action="/delete/{{ book.id }}" method="post" onsubmit="return confirm('¿Seguro que quieres borrar este libro?');" style="margin:0;">
-                                <button type="submit" class="contrast">🗑️ Eliminar</button>
-                            </form>
+                            <button class="outline" disabled>${{ book.price }}</button>
+                            <button class="contrast" onclick="deleteBook('{{ book.id }}')">🗑️ Eliminar</button>
+
+                        {% elif user.role == 'user' %}
+                            {% if book.stock > 0 %}
+                                <button class="primary" onclick="alert('¡Añadido al carrito!')">🛒 Comprar (${{ book.price }})</button>
+                            {% else %}
+                                <button class="secondary" disabled>🚫 No disponible</button>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </footer>
             </article>
             {% endfor %}
         </div>
+
+        <div class="grid" style="margin-top: 30px;">
+            {% if page > 1 %}
+                <a href="/?page={{ page - 1 }}" role="button" class="secondary">⬅️ Anterior</a>
+            {% else %}
+                <button disabled class="secondary">⬅️ Anterior</button>
+            {% endif %}
+
+            <div style="text-align: center; padding-top: 10px;">
+                <small>Página {{ page }} de {{ total_pages }}</small>
+            </div>
+
+            {% if page < total_pages %}
+                <a href="/?page={{ page + 1 }}" role="button" class="secondary">Siguiente ➡️</a>
+            {% else %}
+                <button disabled class="secondary">Siguiente ➡️</button>
+            {% endif %}
+        </div>
+
     </main>
 
+    <script>
+        async function deleteBook(bookId) {
+            if (!confirm('¿Seguro que quieres borrar este libro?')) return;
+
+            try {
+                const response = await fetch(`/web/books/${bookId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const card = document.getElementById(`book-card-${bookId}`);
+                    card.classList.add('fading-out'); 
+                    
+                    setTimeout(() => {
+                        card.remove();
+                    }, 500);
+                } else {
+                    alert('Error al borrar el libro (quizás no eres admin)');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Ocurrió un error de conexión');
+            }
+        }
+    </script>
 </body>
 </html>

@@ -10,6 +10,7 @@ class BookBase(BaseModel):
     description: Optional[str] = None
     price: float
     available: bool = False
+    stock: int = 0
 
 class BookCreate(BookBase):
     pass

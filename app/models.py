@@ -12,6 +12,7 @@ class Book(Base):
     description = Column(String)
     price = Column(Float)
     available = Column(Boolean, default=False)
+    stock = Column(Integer, default=0)
 
 class User(Base):
     __tablename__ = "users"

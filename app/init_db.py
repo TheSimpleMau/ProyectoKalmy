@@ -1,6 +1,6 @@
 # app/init_db.py
 import logging
-from sqlalchemy.orm import Session
+import random
 from . import models, database, auth
 
 logger = logging.getLogger("uvicorn")
@@ -67,6 +67,12 @@ def create_tables():
                 models.Book(name="El extranjero", author="Albert Camus", description="Existencialismo francés", price=14.50, available=True),
                 ]
             
+            for libro in libros_iniciales:
+                if libro.available:
+                    libro.stock = random.randint(5, 30)
+                else:
+                    libro.stock = 0
+            
             db.add_all(libros_iniciales)
             db.commit()
             logger.info("--- Datos dummy hechos ---")
@@ -81,6 +87,13 @@ def create_tables():
             db.add(admin_user)
             db.commit()
             logger.info("--- Usuario 'admin' con password 'admin123' creado ---")
+            
+            logger.info("--- Creando usuario Empleado... ---")
+            hashed_pwd = auth.get_password_hash("empleado123")
+            admin_user = models.User(username="empleado", hashed_password=hashed_pwd, role="employee")
+            db.add(admin_user)
+            db.commit()
+            logger.info("--- Usuario 'empleado' con password 'empleado123' creado ---")
             
             logger.info("--- Creando usuario Test... ---")
             hashed_pwd = auth.get_password_hash("test123")

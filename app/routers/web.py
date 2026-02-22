@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Request, Depends, Cookie, status, Form, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Request, Depends, Cookie, status, Form, HTTPException, Query
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from jose import jwt, JWTError
+from jose import jwt
 from .. import database, models, auth
+import math
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -35,10 +36,9 @@ def login_logic(
     user = db.query(models.User).filter(models.User.username == username).first()
     
     if not user or not auth.verify_password(password, user.hashed_password):
-        # Si falla, volvemos a mostrar el HTML pero con un mensaje de error
         return templates.TemplateResponse("login.html", {
             "request": request,
-            "error": "Usuario o contraseña incorrectos" # Esto se verá en el HTML
+            "error": "Usuario o contraseña incorrectos"
         })
     
     access_token = auth.create_access_token(data={"sub": user.username})
@@ -62,46 +62,67 @@ def logout():
 
 # --- Home ---
 @router.get("/")
-def home(request: Request,
-        db: Session = Depends(database.get_db),
-        user = Depends(get_user_from_cookie)):
+def home(
+    request: Request, 
+    db: Session = Depends(database.get_db), 
+    user = Depends(get_user_from_cookie),
+    page: int = Query(1, ge=1)
+):
     if not user: return RedirectResponse("/login")
-
-    books = db.query(models.Book).all()
+    LIMIT = 6
+    offset = (page - 1) * LIMIT
+    
+    total_books = db.query(models.Book).count()
+    total_pages = math.ceil(total_books / LIMIT)
+    
+    books = db.query(models.Book).offset(offset).limit(LIMIT).all()
     
     return templates.TemplateResponse("index.html", {
         "request": request, 
         "books": books,
         "title": "Librería Chida",
-        "user": user
+        "user": user,
+        "page": page,
+        "total_pages": total_pages
     })
 
 
-# --- Borrar libro (Solo Admin) ---
-@router.post("/delete/{book_id}")
-def delete_book_web(book_id: int, db: Session = Depends(database.get_db), user = Depends(get_user_from_cookie)):
-    if not user or user.role != "admin":
-        raise HTTPException(status_code=403, detail="No tienes permisos para realizar esta acción.")
+# --- Aciones de Admin --- 
+
+# --- Borrar libro ---
+@router.delete("/web/books/{book_id}")
+def delete_book(book_id: str, db: Session = Depends(database.get_db), user = Depends(get_user_from_cookie)):
+    
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="No tienes permisos de administrador")
+    
     book = db.query(models.Book).filter(models.Book.id == book_id).first()
     if book:
         db.delete(book)
         db.commit()
-    
-    return RedirectResponse("/", status_code=303)
+        return JSONResponse(status_code=200, content={"message": "Libro eliminado"})
+    return JSONResponse(status_code=404, content={"message": "Libro no encontrado"})
 
-# --- Crear libro (Solo Admin) ---
+# --- Crear libro ---
 @router.post("/create")
 def create_book_web(
     name: str = Form(...),
     author: str = Form(...),
     price: float = Form(...),
     description: str = Form(...),
+    stock: int = Form(...),
     db: Session = Depends(database.get_db), 
     user = Depends(get_user_from_cookie)
 ):
     if not user or user.role != "admin":
-        raise HTTPException(status_code=403, detail="No tienes permisos para realizar esta acción.")
-    new_book = models.Book(name=name, author=author, price=price, description=description, available=True)
+        raise HTTPException(status_code=403, detail="Imposible realizar acción.")
+
+    is_available = stock > 0
+
+    new_book = models.Book(
+        name=name, author=author, price=price, 
+        description=description, stock=stock, available=is_available
+    )
     db.add(new_book)
     db.commit()
     
