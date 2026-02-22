@@ -19,6 +19,7 @@
 9. [Instalación y ejecución](#instalación-y-ejecución)
 10. [Mejoras y Consideraciones](#consideraciones-de-seguridad-y-mejoras-sugeridas)
 11. [Estructura del proyecto](#estructura-del-proyecto-resumen-de-archivos)
+12. [Licencia](#licencia)
 
 ---
 
@@ -113,6 +114,9 @@ La suite de pruebas en `test_main.py` utiliza una base de datos SQLite en memori
 
 ### Instalación
 1.  Clonar el repositorio.
+    ```bash
+    git clone https://github.com/TheSimpleMau/ProyectoKalmy.git
+    ```
 2.  Crear e instalar el entorno virtual:
     ```bash
     python -m venv venv
@@ -135,8 +139,22 @@ uvicorn app.main:app --reload
 │   ├── templates/
 │   ├── auth.py
 │   ├── models.py
-│   └── ...
+│   ├── database.py
+│   ├── init_db.py
+│   ├── main.py
+│   ├── schemas.py
 ├── test_main.py
 ├── requirements.txt
 └── database.db        # Generada automáticamente
 ```
+
+# Licencia
+---
+
+## ⚖️ Licencia
+
+Este proyecto está bajo la Licencia **MIT**. 
+Consulta el archivo [LICENSE](LICENSE) para más detalles.
+
+---
+**Desarrollado por Mauricio Olguín Sánchez.**
