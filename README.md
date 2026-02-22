@@ -1,272 +1,142 @@
-# ProyectoKalmy - Libreía Kalmy
+# ProyectoKalmy - Librería Kalmy
 
-> **Resumen rápido:** Proyecto web/API para gestionar una librería (catálogo de libros) con **FastAPI**, vistas HTML con **Jinja2**, autenticación por **JWT**, control de roles (**RBAC**) y persistencia en **SQLite**. Incluye rutas públicas y protegidas (API y web), inicialización automática de la BD con datos de ejemplo y una batería de tests automatizados con `pytest`.
+> **Resumen:** Solución integral (API + Web) para la gestión de una librería desarrollada con **FastAPI**. El sistema implementa un CRUD completo, autenticación **JWT**, control de acceso por roles (**RBAC**), persistencia en **SQLite** y renderizado de vistas dinámicas con **Jinja2**.
+
+![CI/CD Pipeline](https://github.com/thesimplemau/ProyectoKalmy/actions/workflows/ci.yml/badge.svg)
 
 ---
 
 # Contenido
 
-1. [Qué hace el sistema](#qué-hace-el-sistema)
+1. [Requerimientos Cumplidos](#requerimientos-cumplidos)
 2. [Arquitectura y diseño](#arquitectura-y-diseño)
 3. [Modelos y esquemas](#modelos-y-esquemas)
 4. [Autenticación y autorización (RBAC)](#autenticación-y-autorización-rbac)
 5. [Rutas / Endpoints importantes](#rutas--endpoints-importantes)
-6. [Lógica de negocio importante](#lógica-de-negocio-importante)
-7. [Inicialización y datos dummy](#inicialización-y-datos-dummy)
-8. [Tests](#tests)
+6. [Lógica de negocio destacada](#lógica-de-negocio-destacada)
+7. [Inicialización y Seed de Datos](#inicialización-y-seed-de-datos)
+8. [Batería de Tests](#tests)
 9. [Instalación y ejecución](#instalación-y-ejecución)
-10. [Consideraciones de seguridad y mejoras sugeridas](#consideraciones-de-seguridad-y-mejoras-sugeridas)
-11. [Estructura del proyecto (resumen de archivos)](#estructura-del-proyecto-resumen-de-archivos)
+10. [Mejoras y Consideraciones](#consideraciones-de-seguridad-y-mejoras-sugeridas)
+11. [Estructura del proyecto](#estructura-del-proyecto-resumen-de-archivos)
 
 ---
 
-## Qué hace el sistema
+## Requerimientos Cumplidos
 
-* Exponer una **API REST** para gestionar libros (`/items`) con operaciones CRUD.
-* Proveer una **interfaz web** (páginas HTML) para ver el catálogo, comprar libros y realizar acciones administrativas (crear/editar/borrar) a través de formularios.
-* Manejar **autenticación** con JWT (endpoint `/token`) y sesiones web mediante cookie `access_token` (httponly).
-* Implementar **Control de Acceso por Roles (RBAC)** con roles `admin`, `employee`, `user`.
-* Mantener persistencia en **SQLite** y crear/sembrar la BD al iniciar la app.
-* Contar con pruebas automáticas que cubren autenticación, RBAC, vistas web y lógica de negocio.
+
+* ✅ **Framework:** FastAPI (Python 3.10+).
+* ✅ **Base de Datos:** SQLite con SQLAlchemy ORM.
+* ✅ **CRUD Completo:** Endpoints para crear, leer (lista e individual), actualizar y eliminar.
+* ✅ **Validaciones:** Uso exhaustivo de Pydantic para tipos de datos y restricciones (precios > 0, strings no vacíos).
+* ✅ **Documentación:** OpenAPI (Swagger) totalmente configurado y enriquecido.
+* ✅ **Tests Automatizados:** Pruebas unitarias y de integración con Pytest (cobertura de API, Web y Lógica).
+* ⭐ **Bonus - Paginación:** Implementada en el catálogo (API y Web).
+* ⭐ **Bonus - Autenticación:** Sistema JWT con roles diferenciados.
+* ⭐ **Bonus - CI/CD:** Pipeline automatizado con GitHub Actions.
 
 ---
 
 ## Arquitectura y diseño
 
-### Patrón MVC (adaptado)
+### Patrón de Diseño
+Se utiliza una arquitectura modular inspirada en el patrón **MVC**:
+* **Models (`app/models.py`)**: Definición de tablas y relaciones con SQLAlchemy.
+* **Views (`app/templates/`)**: Plantillas HTML con Jinja2 para la experiencia de usuario web.
+* **Controllers/Routers (`app/routers/`)**: Lógica de rutas separada por dominio (auth, items, web).
 
-* **Models**: `app/models.py` — definición de entidades `Item` y `User` (SQLAlchemy).
-* **Views**: `app/templates/*` — páginas HTML renderizadas por Jinja2 (index, login, edit, etc.).
-* **Controllers**: Routers en `app/routers/*` y `app/web.py` — controlan la lógica de las rutas API y web.
-
-  * `app/routers/items.py` → API REST para `items`.
-  * `app/routers/auth.py` → endpoints de registro y token (API).
-  * `app/web.py` → páginas web (login, home, create/edit/delete vía web, compra).
-
-### Dependencias clave
-
-* FastAPI (web + API), Uvicorn (servidor), SQLAlchemy (ORM), Jinja2 (templates), `python-jose` (JWT), `passlib[bcrypt]` (hash de contraseñas), `python-multipart` (formularios), pytest (tests).
-
-### Ciclo de vida
-
-* `app/main.py` registra los routers y define un `lifespan` que llama `create_tables()` en `app/init_db.py` para crear y sembrar la BD al inicio.
+### Tecnologías Clave
+* **FastAPI:** Alto rendimiento y validación automática.
+* **Passlib (Bcrypt):** Hasheo seguro de contraseñas.
+* **Python-Jose:** Generación y validación de tokens JWT.
+* **Lifespan Events:** Gestión automática del ciclo de vida de la aplicación y la base de datos.
 
 ---
 
 ## Modelos y esquemas
 
-### Modelos (SQLAlchemy)
+### Modelos de Datos (SQLAlchemy)
+* **Item:** Representa el libro. Utiliza **UUID** como identificador único para mayor seguridad y evitar la enumeración de recursos. Incluye campos de `stock` y `available`.
+* **User:** Gestión de usuarios con campos para `username`, `hashed_password` y `role` (`admin`, `employee`, `user`).
 
-* **Item**
-
-  * `id: str` (UUID string)
-  * `name`, `author`, `description`, `price`
-  * `stock: int`, `available: bool`
-* **User**
-
-  * `id: int` (auto incremental)
-  * `username: str`, `hashed_password: str`
-  * `role: str` (default `"user"`)
-
-### Schemas (Pydantic)
-
-* `ItemCreate`, `ItemResponse` — validación/serialización para API.
-* `UserCreate`, `UserResponse` — creación y respuesta de usuario.
-* `Token`, `TokenData` — esquema para JWT.
-
-Los `response_model` en los endpoints usan esas clases para asegurar contratos API.
+### Validación (Pydantic)
+Se definieron esquemas estrictos (`ItemCreate`, `ItemResponse`, etc.) utilizando `Field` para enriquecer la documentación de OpenAPI con ejemplos y restricciones de validación (como `gt=0` para precios y `ge=0` para stock).
 
 ---
 
 ## Autenticación y autorización (RBAC)
 
-### JWT para API
+### Sistema de Doble Capa
+1.  **JWT para API:** Los endpoints de la API REST se protegen mediante la dependencia `get_current_user` y el esquema OAuth2.
+2.  **Cookies para Web:** Para la interfaz HTML, se utiliza una cookie `access_token` con la propiedad `httponly=True` para prevenir ataques XSS, permitiendo una experiencia de navegación fluida.
 
-* `app/auth.py` define:
-
-  * `SECRET_KEY`, `ALGORITHM`, expiración de token (configurable por `ACCESS_TOKEN_EXPIRE_MINUTES`).
-  * `create_access_token()` para firmar JWT.
-  * `get_current_user()` dependency que valida token OAuth2 (`OAuth2PasswordBearer`) y obtiene el usuario de la BD.
-
-### Login para web
-
-* `app/web.py` maneja formularios de login. Si el login tiene éxito:
-
-  * crea JWT con `auth.create_access_token(...)`
-  * setea cookie `access_token` con `httponly=True` (no accesible desde JS).
-* `get_user_from_cookie()` decodifica el JWT de la cookie para identificar al usuario en las vistas.
-
-### RBAC (roles)
-
-* `User.role` almacena el rol (`admin`, `employee`, `user`).
-* En endpoints críticos (crear/editar/eliminar libros vía API o web) se comprueba `current_user.role != "admin"` y se lanza `HTTPException(status_code=403)` para evitar acciones no autorizadas.
-* En `web.py` se protege páginas y acciones web revisando `current_user` y `user.role`.
+### Roles (RBAC)
+* **Admin:** Acceso total (Lectura, Escritura, Edición, Eliminación).
+* **Employee / User:** Acceso limitado a consulta y compra, con restricciones `403 Forbidden` en acciones administrativas.
 
 ---
 
-## Rutas / Endpoints importantes
+## Lógica de negocio destacada
 
-### API (`/items`)
-
-* `GET /items/` — lista pública (con `skip` y `limit`).
-* `GET /items/{item_id}` — obtener detalle libro.
-* `POST /items/` — crear (admin).
-* `PUT /items/{item_id}` — actualizar (admin).
-* `DELETE /items/{item_id}` — borrar (admin).
-
-### Autenticación (API)
-
-* `POST /register` — crear usuario (router `auth`).
-* `POST /token` — login (OAuth2PasswordRequestForm), devuelve `access_token` y `token_type`.
-
-### Web (vistas, rutas no documentadas en docs)
-
-* `GET /login` — formulario de login.
-* `POST /login` — procesa login y setea cookie.
-* `GET /logout` — borra cookie y redirige.
-* `GET /` — home (HTML), paginación (`page`), requiere cookie válida.
-* `POST /buy/{item_id}` — compra (reduce `stock`, marca `available=False` si stock=0).
-* `POST /create` — crear libro vía HTML (admin).
-* `GET/POST /edit/{item_id}` — editar libro (admin).
-* `DELETE /web/items/{item_id}` — eliminar libro (admin), devuelve JSON.
+* **Gestión Automática de Disponibilidad:** Al realizar una compra o editar un libro, el sistema verifica el `stock`. Si este llega a 0, el campo `available` se marca automáticamente como `False`.
+* **Paginación Inteligente:** Implementada con parámetros `skip` y `limit`. En la interfaz web, el cálculo de páginas se realiza dinámicamente (`math.ceil`) basándose en el total de registros.
+* **Persistencia Segura:** Uso de sesiones de base de datos (`get_db`) gestionadas como dependencias para asegurar el cierre correcto de conexiones.
 
 ---
 
-## Lógica de negocio importante
+## Inicialización y Seed de Datos
 
-* **Compra (`/buy/{item_id}`)**: si hay stock y `available` true, se decrementa `stock`. Si `stock` llega a 0, `available` se pone en `False`. Operación segura para evitar ventas cuando no hay stock.
-* **Paginación en home**: límite fijo `LIMIT = 6`, cálculo de `offset` y `total_pages` (usa `math.ceil`).
-* **Disponibilidad vs stock**: `available` se deriva de `stock > 0` al crear/editar y al sembrar datos iniciales.
-* **Semilla de datos**: `init_db.create_tables()` si la tabla `Item` está vacía, inserta un conjunto amplio de libros y asigna stock aleatorio a los disponibles.
-
----
-
-## Inicialización y datos dummy
-
-* `app/init_db.py` crea las tablas (metadata.create_all) y:
-
-  * Si no hay `Item`, inserta ~60 libros de muestra (lista en el archivo).
-  * Si no hay `User`, crea tres usuarios por defecto:
-
-    * `admin` / `admin123` (rol `admin`)
-    * `empleado` / `empleado123` (rol `employee`)
-    * `test` / `test123` (rol `user`)
-* `create_tables()` se invoca en el `lifespan` de la app en `main.py`, por lo que ocurre al arrancar la aplicación.
+El proyecto incluye un script de inicialización (`app/init_db.py`) que se ejecuta mediante el evento `lifespan` al arrancar la app.
+* **Seed automático:** Si la base de datos está vacía, se insertan automáticamente ~60 libros y los 3 usuarios de prueba (`admin`, `empleado`, `test`).
+* **Credenciales por defecto:**
+    * Admin: `admin` / `admin123`
+    * Employee: `empleado` / `empleado123`
+    * User: `test` / `test123`
 
 ---
 
 ## Tests
 
-* `test_main.py` usa `TestClient` y una base de datos en memoria (`sqlite:///:memory:` y `StaticPool`) para pruebas aisladas.
-* Hace override de la dependencia `get_db` para usar `TestingSessionLocal`.
-* Cubre:
-
-  * Registro y login (API).
-  * RBAC: admin puede crear/editar/borrar; usuarios normales no.
-  * Endpoints públicos y privados.
-  * Flujo web: login via form, cookie `access_token`, redirecciones, compra de libro (stock decrementa hasta desactivar), paginación, creación/edición via formulario.
-* Buen ejemplo de cómo testear tanto API (Bearer token) como vistas (cookies).
+La suite de pruebas en `test_main.py` utiliza una base de datos SQLite en memoria (`sqlite:///:memory:`) para garantizar un entorno limpio y rápido.
+* **Tests de Integración:** Verifican el flujo completo de login -> obtención de token -> creación de item.
+* **Tests de Seguridad:** Validan que los usuarios sin rol `admin` no puedan ejecutar DELETE o PUT.
+* **Tests de UI:** Comprueban que Jinja2 renderice correctamente los datos de la base de datos en el HTML.
+* **Lógica de Compra:** Test específico que simula compras sucesivas hasta agotar stock y verifica el cambio de estado del ítem.
 
 ---
 
 ## Instalación y ejecución
 
-### Requisitos (ejemplos)
-
+### Requisitos
 * Python 3.10+
-* Recomendado usar virtualenv / venv.
+* Pip (gestor de paquetes)
 
-### Dependencias (ejemplo `requirements.txt`)
+### Instalación
+1.  Clonar el repositorio.
+2.  Crear e instalar el entorno virtual:
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # Linux/Mac
+    .\venv\Scripts\activate   # Windows
+    pip install -r requirements.txt
+    ```
 
-```
-fastapi
-uvicorn[standard]
-SQLAlchemy
-jinja2
-python-jose[cryptography]
-passlib[bcrypt]
-python-multipart
-pytest
-requests
-```
-
-### Ejecutar localmente
-
-1. Crear entorno:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate    # mac/linux
-.\.venv\Scripts\activate     # windows
-pip install -r requirements.txt
-```
-
-2. Iniciar la app:
-
+### Ejecución
 ```bash
 uvicorn app.main:app --reload
 ```
 
-* Al arrancar, `init_db.create_tables()` sembrará la BD `./database.db` si está vacía.
-
-3. Documentación automática:
-
-* OpenAPI: `http://127.0.0.1:8000/docs` (puedes usar el botón *Authorize* gracias a `oauth2_scheme`).
-
-4. Ejecutar tests:
-
-```bash
-pytest -q
+## Estructura del proyecto
+```text
+.
+├── .github/workflows/ # Configuración de GitHub Actions
+├── app/
+│   ├── routers/
+│   ├── templates/
+│   ├── auth.py
+│   ├── models.py
+│   └── ...
+├── test_main.py
+├── requirements.txt
+└── database.db        # Generada automáticamente
 ```
-
----
-
-## Consideraciones de seguridad y mejoras sugeridas
-
-### Observaciones de seguridad detectadas en el código actual
-
-* `SECRET_KEY` está **hardcodeada** en `app/auth.py`. Recomendación: usar variables de entorno (p. ej. `os.environ["SECRET_KEY"]`) y no almacenar claves en el repo.
-* Cookie `access_token` tiene `httponly=True` (bueno) pero no se marca `secure=True` (necesario en producción HTTPS).
-* No hay protección explícita CSRF para formularios (aunque cookie es httponly y las acciones mutantes usan POST/DELETE, considerar CSRF token si se expone a navegadores inseguros).
-* Expiración de token por defecto relativamente corta (30 minutos en la configuración actual) — ajustar según necesidades y refresh tokens si se desea experiencia de usuario más fluida.
-* Revisar manejo de excepciones en decodificado de JWT: `except:` genérico en `get_user_from_cookie` — al loggear errores puede ayudar al diagnóstico.
-
-### Mejoras funcionales y tecnológicas
-
-* Mover la configuración sensible (SECRET_KEY, DB URL, token expiry) a un `config` central o usar `pydantic.BaseSettings`.
-* Añadir endpoints para gestión de usuarios (crear/editar roles) protegidos para administradores.
-* Implementar **refresh tokens** y revocación de tokens (lista negra).
-* Migración a una BD más robusta (Postgres) si se necesita concurrencia real y despliegue en producción.
-* Tests de integración / CI (GitHub Actions) que ejecuten `pytest` en cada PR.
-* Añadir logging estructurado y métricas.
-
----
-
-## Estructura del proyecto (resumen)
-
-```
-app/
-  main.py
-  auth.py
-  database.py
-  init_db.py
-  models.py
-  schemas.py
-  templates/
-  routers/
-    auth.py
-    items.py
-  web.py
-tests/
-  test_main.py
-database.db (sqlite)        # creado al ejecutar
-requirements.txt
-README.md
-```
-
----
-
-## Contacto y licencia
-
-* Autor: Mauricio Olguín Sánchez.
-* Licencia: MIT.
