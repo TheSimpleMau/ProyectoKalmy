@@ -31,6 +31,9 @@ def create_book(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Imposible realizar acción.")
+    
     db_book = models.Book(**book.model_dump())
     db.add(db_book)
     db.commit()
@@ -44,6 +47,8 @@ def update_book(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Imposible realizar acción.")
     db_book = db.query(models.Book).filter(models.Book.id == book_id).first()
     if db_book is None:
         raise HTTPException(status_code=404, detail="Libro no encontrado")
@@ -61,6 +66,9 @@ def delete_book(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Imposible realizar acción.")
+
     db_book = db.query(models.Book).filter(models.Book.id == book_id).first()
     if db_book is None:
         raise HTTPException(status_code=404, detail="Libro no encontrado")

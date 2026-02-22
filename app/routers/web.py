@@ -24,7 +24,7 @@ def get_user_from_cookie(access_token: str | None = Cookie(default=None), db: Se
 # --- Login ---
 @router.get("/login")
 def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html", {"request": request})
 
 @router.post("/login")
 def login_logic(
@@ -36,10 +36,10 @@ def login_logic(
     user = db.query(models.User).filter(models.User.username == username).first()
     
     if not user or not auth.verify_password(password, user.hashed_password):
-        return templates.TemplateResponse("login.html", {
-            "request": request,
-            "error": "Usuario o contraseña incorrectos"
-        })
+        return templates.TemplateResponse(request, "login.html", {
+                "request": request,
+                "error": "Usuario o contraseña incorrectos"
+            })
     
     access_token = auth.create_access_token(data={"sub": user.username})
     
@@ -77,7 +77,7 @@ def home(
     
     books = db.query(models.Book).offset(offset).limit(LIMIT).all()
     
-    return templates.TemplateResponse("index.html", {
+    return templates.TemplateResponse(request, "index.html", {
         "request": request, 
         "books": books,
         "title": "Librería Chida",
@@ -86,6 +86,27 @@ def home(
         "total_pages": total_pages
     })
 
+@router.post("/buy/{book_id}")
+def buy_book(
+    book_id: str, 
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_user_from_cookie)
+):
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    db_book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    
+    if db_book and db_book.stock > 0 and db_book.available:
+        db_book.stock -= 1
+        
+        if db_book.stock == 0:
+            db_book.available = False
+            
+        db.commit()
+        db.refresh(db_book)
+
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 # --- Aciones de Admin --- 
 
@@ -127,3 +148,48 @@ def create_book_web(
     db.commit()
     
     return RedirectResponse("/", status_code=303)
+
+# --- Mostrar página de edición ---
+@router.get("/edit/{book_id}")
+def edit_book_page(
+    request: Request, 
+    book_id: str, 
+    db: Session = Depends(database.get_db), 
+    current_user: models.User = Depends(get_user_from_cookie)
+):
+    if not current_user or current_user.role != "admin":
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+        
+    book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    if not book:
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+        
+    return templates.TemplateResponse(request, "edit.html", {"request": request, "book": book, "user": current_user})
+
+# --- Guardar los cambios del libro ---
+@router.post("/edit/{book_id}")
+def edit_book_logic(
+    book_id: str,
+    name: str = Form(...),
+    author: str = Form(...),
+    price: float = Form(...),
+    description: str = Form(...),
+    stock: int = Form(...),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_user_from_cookie)
+):
+    if not current_user or current_user.role != "admin":
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+        
+    book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    if book:
+        book.name = name
+        book.author = author
+        book.price = price
+        book.description = description
+        book.stock = stock
+        book.available = stock > 0 
+        
+        db.commit()
+        
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)

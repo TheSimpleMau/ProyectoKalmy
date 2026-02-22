@@ -18,6 +18,7 @@
             <ul><li><strong>📚 {{ title }}</strong></li></ul>
             <ul>
                 <li>Hola, {{ user.username }} {% if user.role == 'admin' %} <span class="admin-badge">ADMIN</span> {% endif %}</li>
+                <li><a href="/docs" target="_blank" class="secondary">📖 API Docs</a></li>
                 <li><a href="/logout" role="button" class="contrast outline">Salir</a></li>
             </ul>
         </nav>
@@ -72,14 +73,19 @@
                 <footer>
                     <div class="grid">
                         {% if user.role == 'admin' %}
-                            <button class="outline" disabled>${{ book.price }}</button>
-                            <button class="contrast" onclick="deleteBook('{{ book.id }}')">🗑️ Eliminar</button>
+                            <a href="/edit/{{ book.id }}" role="button" class="secondary">✏️ Editar</a>
+                            
+                            <button class="contrast" onclick="deleteBook('{{ book.id }}')">
+                                🗑️ Eliminar
+                            </button>
 
                         {% elif user.role == 'user' %}
-                            {% if book.stock > 0 %}
-                                <button class="primary" onclick="alert('¡Añadido al carrito!')">🛒 Comprar (${{ book.price }})</button>
+                            {% if book.stock > 0 and book.avilable%}
+                                <form action="/buy/{{ book.id }}" method="post" style="display: inline;">
+                                    <button type="submit" style="background-color: #28a745; border-color: #28a745;">🛒 Comprar</button>
+                                </form>
                             {% else %}
-                                <button class="secondary" disabled>🚫 No disponible</button>
+                                <button disabled class="secondary">🚫 Fuera de inventario</button>
                             {% endif %}
                         {% endif %}
                     </div>

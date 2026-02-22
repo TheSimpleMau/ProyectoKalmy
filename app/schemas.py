@@ -1,5 +1,5 @@
 # app/schemas.py
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 # --- BOOKS ---
@@ -18,8 +18,7 @@ class BookCreate(BookBase):
 class BookResponse(BookBase):
     id: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # --- USER ---
 class UserBase(BaseModel):
@@ -30,8 +29,8 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: int
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
 
 # --- TOKEN ---
 class Token(BaseModel):
