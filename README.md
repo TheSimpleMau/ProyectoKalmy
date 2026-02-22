@@ -1,8 +1,6 @@
-# ProyectoKalmy
-# README.md — Librería Kalmy
+# ProyectoKalmy - Libreía Kalmy
 
-> **Resumen rápido:** Proyecto web/API para gestionar una librería (catálogo de libros) con **FastAPI**, vistas HTML con **Jinja2**, autenticación por **JWT**, control de roles (RBAC) y persistencia en **SQLite**. Incluye rutas públicas y protegidas (API y web), inicialización automática de la BD con datos de ejemplo y una batería de tests automatizados con `pytest`.
-> Código completo y todos los archivos están en el archivo que me compartiste. 
+> **Resumen rápido:** Proyecto web/API para gestionar una librería (catálogo de libros) con **FastAPI**, vistas HTML con **Jinja2**, autenticación por **JWT**, control de roles (**RBAC**) y persistencia en **SQLite**. Incluye rutas públicas y protegidas (API y web), inicialización automática de la BD con datos de ejemplo y una batería de tests automatizados con `pytest`.
 
 ---
 
