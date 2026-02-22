@@ -72,61 +72,61 @@ def home(
     LIMIT = 6
     offset = (page - 1) * LIMIT
     
-    total_books = db.query(models.Book).count()
-    total_pages = math.ceil(total_books / LIMIT)
+    total_items = db.query(models.Item).count()
+    total_pages = math.ceil(total_items / LIMIT)
     
-    books = db.query(models.Book).offset(offset).limit(LIMIT).all()
+    items = db.query(models.Item).offset(offset).limit(LIMIT).all()
     
     return templates.TemplateResponse(request, "index.html", {
         "request": request, 
-        "books": books,
+        "items": items,
         "title": "Librería Chida",
         "user": user,
         "page": page,
         "total_pages": total_pages
     })
 
-@router.post("/buy/{book_id}")
-def buy_book(
-    book_id: str, 
+@router.post("/buy/{item_id}")
+def buy_item(
+    item_id: str, 
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(get_user_from_cookie)
 ):
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
-    db_book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
     
-    if db_book and db_book.stock > 0 and db_book.available:
-        db_book.stock -= 1
+    if db_item and db_item.stock > 0 and db_item.available:
+        db_item.stock -= 1
         
-        if db_book.stock == 0:
-            db_book.available = False
+        if db_item.stock == 0:
+            db_item.available = False
             
         db.commit()
-        db.refresh(db_book)
+        db.refresh(db_item)
 
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 # --- Aciones de Admin --- 
 
 # --- Borrar libro ---
-@router.delete("/web/books/{book_id}")
-def delete_book(book_id: str, db: Session = Depends(database.get_db), user = Depends(get_user_from_cookie)):
+@router.delete("/web/items/{item_id}")
+def delete_item(item_id: str, db: Session = Depends(database.get_db), user = Depends(get_user_from_cookie)):
     
     if user.role != "admin":
         raise HTTPException(status_code=403, detail="No tienes permisos de administrador")
     
-    book = db.query(models.Book).filter(models.Book.id == book_id).first()
-    if book:
-        db.delete(book)
+    item = db.query(models.Item).filter(models.Item.id == item_id).first()
+    if item:
+        db.delete(item)
         db.commit()
         return JSONResponse(status_code=200, content={"message": "Libro eliminado"})
     return JSONResponse(status_code=404, content={"message": "Libro no encontrado"})
 
 # --- Crear libro ---
 @router.post("/create")
-def create_book_web(
+def create_item_web(
     name: str = Form(...),
     author: str = Form(...),
     price: float = Form(...),
@@ -140,36 +140,36 @@ def create_book_web(
 
     is_available = stock > 0
 
-    new_book = models.Book(
+    new_item = models.Item(
         name=name, author=author, price=price, 
         description=description, stock=stock, available=is_available
     )
-    db.add(new_book)
+    db.add(new_item)
     db.commit()
     
     return RedirectResponse("/", status_code=303)
 
 # --- Mostrar página de edición ---
-@router.get("/edit/{book_id}")
-def edit_book_page(
+@router.get("/edit/{item_id}")
+def edit_item_page(
     request: Request, 
-    book_id: str, 
+    item_id: str, 
     db: Session = Depends(database.get_db), 
     current_user: models.User = Depends(get_user_from_cookie)
 ):
     if not current_user or current_user.role != "admin":
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
         
-    book = db.query(models.Book).filter(models.Book.id == book_id).first()
-    if not book:
+    item = db.query(models.Item).filter(models.Item.id == item_id).first()
+    if not item:
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
         
-    return templates.TemplateResponse(request, "edit.html", {"request": request, "book": book, "user": current_user})
+    return templates.TemplateResponse(request, "edit.html", {"request": request, "item": item, "user": current_user})
 
 # --- Guardar los cambios del libro ---
-@router.post("/edit/{book_id}")
-def edit_book_logic(
-    book_id: str,
+@router.post("/edit/{item_id}")
+def edit_item_logic(
+    item_id: str,
     name: str = Form(...),
     author: str = Form(...),
     price: float = Form(...),
@@ -181,14 +181,14 @@ def edit_book_logic(
     if not current_user or current_user.role != "admin":
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
         
-    book = db.query(models.Book).filter(models.Book.id == book_id).first()
-    if book:
-        book.name = name
-        book.author = author
-        book.price = price
-        book.description = description
-        book.stock = stock
-        book.available = stock > 0 
+    item = db.query(models.Item).filter(models.Item.id == item_id).first()
+    if item:
+        item.name = name
+        item.author = author
+        item.price = price
+        item.description = description
+        item.stock = stock
+        item.available = stock > 0 
         
         db.commit()
         

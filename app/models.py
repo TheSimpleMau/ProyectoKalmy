@@ -2,8 +2,8 @@ import uuid
 from sqlalchemy import Column, String, Float, Boolean, Integer
 from .database import Base
 
-class Book(Base):
-    __tablename__ = "books"
+class Item(Base):
+    __tablename__ = "item"
     
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     

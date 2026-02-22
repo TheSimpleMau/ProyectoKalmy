@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 # Importar app y configuración
 from app.main import app
 from app.database import Base, get_db
-from app.models import User, Book
+from app.models import User, Item
 from app.auth import get_password_hash
 
 # Crear base de datos
@@ -39,7 +39,7 @@ def setup_database():
     empleado = User(username="emp_test", hashed_password=get_password_hash("pass123"), role="employee")
     usuario = User(username="user_test", hashed_password=get_password_hash("pass123"), role="user")
     
-    libro = Book(
+    libro = Item(
         id="libro-1", name="Libro Base", author="Autor", 
         description="Desc", price=10.0, available=True, stock=5
     )
@@ -81,23 +81,23 @@ def test_login_credenciales_incorrectas():
 # --- Pruebas de la api (CRUD Y RBAC) ---
 
 def test_obtener_lista_libros():
-    res = client.get("/books/")
+    res = client.get("/items/")
     assert res.status_code == 200
     assert len(res.json()) == 1
     assert res.json()[0]["name"] == "Libro Base"
 
 def test_obtener_libro_por_id_valido():
-    res = client.get("/books/libro-1")
+    res = client.get("/items/libro-1")
     assert res.status_code == 200
 
 def test_obtener_libro_inexistente():
-    res = client.get("/books/no-existe")
+    res = client.get("/items/no-existe")
     assert res.status_code == 404
 
 def test_admin_puede_crear_libro():
     token = obtener_token("admin_test", "pass123")
     res = client.post(
-        "/books/", 
+        "/items/", 
         json={"name": "Nuevo", "author": "Bot", "description": "X", "price": 15.0, "stock": 10},
         headers={"Authorization": f"Bearer {token}"}
     )
@@ -106,7 +106,7 @@ def test_admin_puede_crear_libro():
 
 def test_usuario_normal_no_puede_borrar_libro():
     token = obtener_token("user_test", "pass123")
-    res = client.delete("/books/libro-1", headers={"Authorization": f"Bearer {token}"})
+    res = client.delete("/items/libro-1", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 403
 
 
@@ -128,7 +128,7 @@ def test_borrar_libro_admin():
     cookie = login_res.cookies.get("access_token")
     client.cookies.set("access_token", cookie)
     
-    res = client.delete("/web/books/libro-1")
+    res = client.delete("/web/items/libro-1")
     client.cookies.clear()
     
     assert res.status_code == 200
@@ -139,7 +139,7 @@ def test_borrar_libro_empleado_falla():
     cookie = login_res.cookies.get("access_token")
 
     client.cookies.set("access_token", cookie)
-    res = client.delete("/web/books/libro-1")
+    res = client.delete("/web/items/libro-1")
     client.cookies.clear()
     
     assert res.status_code == 403
@@ -186,7 +186,7 @@ def test_crear_libro_mediante_formulario_web_admin():
 def test_usuario_normal_no_puede_crear_libro_api():
     token = obtener_token("user_test", "pass123")
     res = client.post(
-        "/books/", 
+        "/items/", 
         json={"name": "Hacker", "author": "Hacker", "description": "Hacker", "price": 0, "stock": 1},
         headers={"Authorization": f"Bearer {token}"}
     )
@@ -195,7 +195,7 @@ def test_usuario_normal_no_puede_crear_libro_api():
 def test_usuario_normal_no_puede_editar_libro_api():
     token = obtener_token("user_test", "pass123")
     res = client.put(
-        "/books/libro-1", 
+        "/items/libro-1", 
         json={"name": "Hacker Edit", "author": "Hacker", "description": "H", "price": 0, "stock": 1},
         headers={"Authorization": f"Bearer {token}"}
     )
@@ -211,7 +211,7 @@ def test_comprar_libro_resta_stock_y_desactiva():
         assert res.status_code in [302, 303]
         
     client.cookies.clear()
-    res_api = client.get("/books/libro-1")
+    res_api = client.get("/items/libro-1")
     libro_actualizado = res_api.json()
     
     assert libro_actualizado["stock"] == 0
@@ -233,7 +233,7 @@ def test_admin_puede_editar_libro_web():
     client.cookies.clear()
     
     assert res.status_code in [302, 303]
-    res_api = client.get("/books/libro-1")
+    res_api = client.get("/items/libro-1")
     assert res_api.json()["name"] == "Libro Editado"
     assert res_api.json()["price"] == 99.99
 
@@ -247,5 +247,28 @@ def test_empleado_no_puede_editar_libro_web():
     
     assert res.status_code in [302, 303]
     
-    res_api = client.get("/books/libro-1")
+    res_api = client.get("/items/libro-1")
     assert res_api.json()["name"] != "Hacker"
+
+
+# --- Visualización de los datos ---
+
+def test_verificar_si_hay_datos_en_bd():
+    response = client.get("/items/")
+    
+    assert response.status_code == 200
+    datos = response.json()
+    
+    assert len(datos) > 0, "¡La API no devuelve nada! La base de datos está vacía."
+
+def test_verificar_renderizado_de_html():
+    login_res = client.post("/login", data={"username": "user_test", "password": "pass123"}, follow_redirects=False)
+    client.cookies.set("access_token", login_res.cookies.get("access_token"))
+    
+    response = client.get("/") 
+    assert response.status_code == 200
+    
+    html_content = response.text
+    client.cookies.clear()
+    
+    assert "Libro Base" in html_content, "Los datos existen, pero no se renderizan en el HTML."

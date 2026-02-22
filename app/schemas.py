@@ -2,9 +2,9 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
-# --- BOOKS ---
+# --- ItemS ---
 
-class BookBase(BaseModel):
+class ItemBase(BaseModel):
     name: str
     author: str
     description: Optional[str] = None
@@ -12,10 +12,10 @@ class BookBase(BaseModel):
     available: bool = False
     stock: int = 0
 
-class BookCreate(BookBase):
+class ItemCreate(ItemBase):
     pass
 
-class BookResponse(BookBase):
+class ItemResponse(ItemBase):
     id: str
 
     model_config = ConfigDict(from_attributes=True)

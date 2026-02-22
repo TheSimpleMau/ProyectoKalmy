@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 from contextlib import asynccontextmanager
-from .routers import books, auth, web
+from .routers import auth, items, web
 from .init_db import create_tables
 
 # --- Lifespan ---
@@ -15,8 +15,8 @@ async def lifespan(app: FastAPI):
 
 # --- Inicialización de la app ---
 app = FastAPI(
-    title="Librería API",
-    description="API profesional para gestión de libros",
+    title="Librería Kalmy",
+    description="API para gestión de libros",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -26,5 +26,5 @@ templates = Jinja2Templates(directory="app/templates")
 
 # --- Rutas ---
 app.include_router(auth.router)
-app.include_router(books.router)
+app.include_router(items.router)
 app.include_router(web.router)

@@ -49,39 +49,39 @@
         {% endif %}
 
         <div class="book-grid">
-            {% for book in books %}
-            <article id="book-card-{{ book.id }}">
+            {% for item in items %}
+            <article id="item-card-{{ item.id }}">
                 <header>
-                    <strong>{{ book.name }}</strong>
+                    <strong>{{ item.name }}</strong>
                     
-                    {% if book.stock > 0 %}
+                    {% if item.stock > 0 %}
                         <span style="float: right; color: #388e3c; font-size: 0.8em; font-weight: bold;">✅ Disponible</span>
                     {% else %}
                         <span style="float: right; color: #d32f2f; font-size: 0.8em; font-weight: bold;">🚫 Fuera del inventario</span>
                     {% endif %}
                 </header>
                 
-                <small>{{ book.author }}</small>
-                <p>{{ book.description }}</p>
+                <small>{{ item.author }}</small>
+                <p>{{ item.description }}</p>
                 
                 {% if user.role == 'admin' or user.role == 'employee' %}
                 <div style="background-color: var(--pico-muted-border-color); padding: 5px 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">
-                    <small>📦 Inventario actual: <strong>{{ book.stock }}</strong> unidades</small>
+                    <small>📦 Inventario actual: <strong>{{ item.stock }}</strong> unidades</small>
                 </div>
                 {% endif %}
 
                 <footer>
                     <div class="grid">
                         {% if user.role == 'admin' %}
-                            <a href="/edit/{{ book.id }}" role="button" class="secondary">✏️ Editar</a>
+                            <a href="/edit/{{ item.id }}" role="button" class="secondary">✏️ Editar</a>
                             
-                            <button class="contrast" onclick="deleteBook('{{ book.id }}')">
+                            <button class="contrast" onclick="deleteBook('{{ item.id }}')">
                                 🗑️ Eliminar
                             </button>
 
                         {% elif user.role == 'user' %}
-                            {% if book.stock > 0 and book.avilable%}
-                                <form action="/buy/{{ book.id }}" method="post" style="display: inline;">
+                            {% if item.stock > 0 and item.avilable%}
+                                <form action="/buy/{{ item.id }}" method="post" style="display: inline;">
                                     <button type="submit" style="background-color: #28a745; border-color: #28a745;">🛒 Comprar</button>
                                 </form>
                             {% else %}
@@ -115,16 +115,16 @@
     </main>
 
     <script>
-        async function deleteBook(bookId) {
+        async function deleteBook(itemId) {
             if (!confirm('¿Seguro que quieres borrar este libro?')) return;
 
             try {
-                const response = await fetch(`/web/books/${bookId}`, {
+                const response = await fetch(`/web/items/${itemId}`, {
                     method: 'DELETE'
                 });
 
                 if (response.ok) {
-                    const card = document.getElementById(`book-card-${bookId}`);
+                    const card = document.getElementById(`item-card-${itemId}`);
                     card.classList.add('fading-out'); 
                     
                     setTimeout(() => {

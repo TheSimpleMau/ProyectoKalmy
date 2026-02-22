@@ -3,42 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Libro - Kalmy Books</title>
+    <title>Editar Libro - Librería Kalmy</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
 </head>
 <body>
     <main class="container">
         <article>
             <header>
-                <strong>✏️ Editar Libro: {{ book.name }}</strong>
+                <strong>✏️ Editar Libro: {{ item.name }}</strong>
             </header>
             
-            <form action="/edit/{{ book.id }}" method="post">
+            <form action="/edit/{{ item.id }}" method="post">
                 <div class="grid">
                     <label>
                         Título
-                        <input type="text" name="name" value="{{ book.name }}" required>
+                        <input type="text" name="name" value="{{ item.name }}" required>
                     </label>
                     <label>
                         Autor
-                        <input type="text" name="author" value="{{ book.author }}" required>
+                        <input type="text" name="author" value="{{ item.author }}" required>
                     </label>
                 </div>
                 
                 <div class="grid">
                     <label>
                         Precio ($)
-                        <input type="number" step="0.01" name="price" value="{{ book.price }}" required>
+                        <input type="number" step="0.01" name="price" value="{{ item.price }}" required>
                     </label>
                     <label>
                         Inventario (Stock)
-                        <input type="number" name="stock" value="{{ book.stock }}" required min="0">
+                        <input type="number" name="stock" value="{{ item.stock }}" required min="0">
                     </label>
                 </div>
 
                 <label>
                     Descripción
-                    <textarea name="description" required>{{ book.description }}</textarea>
+                    <textarea name="description" required>{{ item.description }}</textarea>
                 </label>
                 
                 <footer>
