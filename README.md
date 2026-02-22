@@ -15,11 +15,10 @@
 5. [Rutas / Endpoints importantes](#rutas--endpoints-importantes)
 6. [Lógica de negocio destacada](#lógica-de-negocio-destacada)
 7. [Inicialización y Seed de Datos](#inicialización-y-seed-de-datos)
-8. [Batería de Tests](#tests)
+8. [Tests](#tests)
 9. [Instalación y ejecución](#instalación-y-ejecución)
-10. [Mejoras y Consideraciones](#consideraciones-de-seguridad-y-mejoras-sugeridas)
-11. [Estructura del proyecto](#estructura-del-proyecto-resumen-de-archivos)
-12. [Licencia](#licencia)
+10. [Estructura del proyecto](#estructura-del-proyecto)
+11. [Licencia](#licencia)
 
 ---
 
@@ -74,6 +73,34 @@ Se definieron esquemas estrictos (`ItemCreate`, `ItemResponse`, etc.) utilizando
 ### Roles (RBAC)
 * **Admin:** Acceso total (Lectura, Escritura, Edición, Eliminación).
 * **Employee / User:** Acceso limitado a consulta y compra, con restricciones `403 Forbidden` en acciones administrativas.
+
+---
+
+## Rutas / Endpoints importantes
+
+### API (`/items`)
+
+* `GET /items/` — lista pública (con `skip` y `limit`).
+* `GET /items/{item_id}` — obtener detalle libro.
+* `POST /items/` — crear (admin).
+* `PUT /items/{item_id}` — actualizar (admin).
+* `DELETE /items/{item_id}` — borrar (admin).
+
+### Autenticación (API)
+
+* `POST /register` — crear usuario (router `auth`).
+* `POST /token` — login (OAuth2PasswordRequestForm), devuelve `access_token` y `token_type`.
+
+### Web (vistas, rutas no documentadas en OpenAPI)
+
+* `GET /login` — formulario de login.
+* `POST /login` — procesa login y setea cookie.
+* `GET /logout` — borra cookie y redirige.
+* `GET /` — home (HTML), paginación (`page`), requiere cookie válida.
+* `POST /buy/{item_id}` — compra (reduce `stock`, marca `available=False` si stock=0).
+* `POST /create` — crear libro vía HTML (admin).
+* `GET/POST /edit/{item_id}` — editar libro (admin).
+* `DELETE /web/items/{item_id}` — eliminar libro (admin), devuelve JSON.
 
 ---
 
