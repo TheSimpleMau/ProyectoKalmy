@@ -93,7 +93,8 @@ def home(
     request: Request, 
     db: Session = Depends(database.get_db), 
     user = Depends(get_user_from_cookie),
-    page: int = Query(1, ge=1)
+    page: int = Query(1, ge=1),
+    search: str | None = Query(None)
 ):
     """
     Renderiza la página principal mostrando el catálogo de libros.
@@ -103,11 +104,20 @@ def home(
     if not user: return RedirectResponse("/login")
     LIMIT = 6
     offset = (page - 1) * LIMIT
+
+    # 1. Iniciamos la consulta base
+    query = db.query(models.Item)
     
-    total_items = db.query(models.Item).count()
-    total_pages = math.ceil(total_items / LIMIT)
+    # 2. Si el usuario escribió algo, le aplicamos el filtro a LA MISMA consulta
+    if search:
+        query = query.filter(models.Item.name.ilike(f"%{search}%"))
     
-    items = db.query(models.Item).offset(offset).limit(LIMIT).all()
+    # 3. Contamos los items usando nuestra consulta ya filtrada (¡muy importante!)
+    total_items = query.count()
+    total_pages = math.ceil(total_items / LIMIT) if total_items > 0 else 1
+    
+    # 4. Traemos los resultados usando nuestra consulta ya filtrada
+    items = query.offset(offset).limit(LIMIT).all()
     
     return templates.TemplateResponse(request, "index.html", {
         "request": request, 
@@ -115,7 +125,8 @@ def home(
         "title": "Librería Chida",
         "user": user,
         "page": page,
-        "total_pages": total_pages
+        "total_pages": total_pages,
+        "search": search
     })
 
 @router.post("/buy/{item_id}", 
@@ -149,22 +160,21 @@ def buy_item(
 
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
-# --- Aciones de Admin --- 
 
+# --- Aciones de Admin --- 
 # --- Borrar libro ---
-@router.delete("/web/items/{item_id}", 
-            summary="Eliminar libro (Admin)",
+@router.delete("/delete/items/{item_id}", 
+            summary="Eliminar libro (Admin) vía Web",
             responses={
                 200: {"description": "Libro eliminado correctamente"},
                 403: {"description": "No tienes permisos de administrador"},
                 404: {"description": "Libro no encontrado"}
             })
-def delete_item(item_id: str, db: Session = Depends(database.get_db), user = Depends(get_user_from_cookie)):
+def delete_item_web(item_id: str, db: Session = Depends(database.get_db), user = Depends(get_user_from_cookie)):
     """
-    Elimina un libro desde el panel de administración web.
-    **Nota:** Requiere que el usuario actual tenga el rol de 'admin'.
+    Elimina un libro desde la interfaz web.
     """
-    if user.role != "admin":
+    if not user or user.role != "admin":
         raise HTTPException(status_code=403, detail="No tienes permisos de administrador")
     
     item = db.query(models.Item).filter(models.Item.id == item_id).first()
@@ -172,6 +182,7 @@ def delete_item(item_id: str, db: Session = Depends(database.get_db), user = Dep
         db.delete(item)
         db.commit()
         return JSONResponse(status_code=200, content={"message": "Libro eliminado"})
+        
     return JSONResponse(status_code=404, content={"message": "Libro no encontrado"})
 
 # --- Crear libro ---

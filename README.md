@@ -8,6 +8,7 @@
 
 # Contenido
 
+1. [Video presentación del proyecto](#Video-presentación-del-proyecto)
 1. [Requerimientos Cumplidos](#requerimientos-cumplidos)
 2. [Arquitectura y diseño](#arquitectura-y-diseño)
 3. [Modelos y esquemas](#modelos-y-esquemas)
@@ -18,12 +19,16 @@
 8. [Tests](#tests)
 9. [Instalación y ejecución](#instalación-y-ejecución)
 10. [Estructura del proyecto](#estructura-del-proyecto)
-11. [Licencia](#licencia)
+11. [Áreas de Mejora](#Áreas-de-Mejora)
+12. [Licencia](#licencia)
 
 ---
 
-## Requerimientos Cumplidos
+# Video presentación del proyecto
 
+[Link directo al video](https://www.youtube.com/watch?v=TAZuf3RxXLg)
+
+## Requerimientos Cumplidos
 
 * ✅ **Framework:** FastAPI (Python 3.10+).
 * ✅ **Base de Datos:** SQLite con SQLAlchemy ORM.
@@ -50,6 +55,7 @@ Se utiliza una arquitectura modular inspirada en el patrón **MVC**:
 * **Passlib (Bcrypt):** Hasheo seguro de contraseñas.
 * **Python-Jose:** Generación y validación de tokens JWT.
 * **Lifespan Events:** Gestión automática del ciclo de vida de la aplicación y la base de datos.
+* **Pico.css y Jinja2:** Facilitar un frontend básico.
 
 ---
 
@@ -72,7 +78,8 @@ Se definieron esquemas estrictos (`ItemCreate`, `ItemResponse`, etc.) utilizando
 
 ### Roles (RBAC)
 * **Admin:** Acceso total (Lectura, Escritura, Edición, Eliminación).
-* **Employee / User:** Acceso limitado a consulta y compra, con restricciones `403 Forbidden` en acciones administrativas.
+* **Employee:** Acceso limitado a consulta de inventario, con restricciones `403 Forbidden` en acciones administrativas.
+* **User:** Acceso limitado a consulta y compra, con restricciones administrativas.
 
 ---
 
@@ -107,7 +114,7 @@ Se definieron esquemas estrictos (`ItemCreate`, `ItemResponse`, etc.) utilizando
 ## Lógica de negocio destacada
 
 * **Gestión Automática de Disponibilidad:** Al realizar una compra o editar un libro, el sistema verifica el `stock`. Si este llega a 0, el campo `available` se marca automáticamente como `False`.
-* **Paginación Inteligente:** Implementada con parámetros `skip` y `limit`. En la interfaz web, el cálculo de páginas se realiza dinámicamente (`math.ceil`) basándose en el total de registros.
+* **Paginación:** Implementada con parámetros `skip` y `limit`.
 * **Persistencia Segura:** Uso de sesiones de base de datos (`get_db`) gestionadas como dependencias para asegurar el cierre correcto de conexiones.
 
 ---
@@ -115,7 +122,7 @@ Se definieron esquemas estrictos (`ItemCreate`, `ItemResponse`, etc.) utilizando
 ## Inicialización y Seed de Datos
 
 El proyecto incluye un script de inicialización (`app/init_db.py`) que se ejecuta mediante el evento `lifespan` al arrancar la app.
-* **Seed automático:** Si la base de datos está vacía, se insertan automáticamente ~60 libros y los 3 usuarios de prueba (`admin`, `empleado`, `test`).
+* **Seed automático:** Si la base de datos está vacía, se insertan automáticamente 45 libros y 3 usuarios de prueba (`admin`, `empleado`, `test`).
 * **Credenciales por defecto:**
     * Admin: `admin` / `admin123`
     * Employee: `empleado` / `empleado123`
@@ -125,7 +132,7 @@ El proyecto incluye un script de inicialización (`app/init_db.py`) que se ejecu
 
 ## Tests
 
-La suite de pruebas en `test_main.py` utiliza una base de datos SQLite en memoria (`sqlite:///:memory:`) para garantizar un entorno limpio y rápido.
+La suite de pruebas en `test_main.py` utiliza una base de datos SQLite en memoria para garantizar un entorno limpio y rápido.
 * **Tests de Integración:** Verifican el flujo completo de login -> obtención de token -> creación de item.
 * **Tests de Seguridad:** Validan que los usuarios sin rol `admin` no puedan ejecutar DELETE o PUT.
 * **Tests de UI:** Comprueban que Jinja2 renderice correctamente los datos de la base de datos en el HTML.
@@ -145,10 +152,17 @@ La suite de pruebas en `test_main.py` utiliza una base de datos SQLite en memori
     git clone https://github.com/TheSimpleMau/ProyectoKalmy.git
     ```
 2.  Crear e instalar el entorno virtual:
+    
+    **Linux o Mac:**
     ```bash
     python -m venv venv
-    source venv/bin/activate  # Linux/Mac
-    .\venv\Scripts\activate   # Windows
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
+    **Windows:**
+    ```bash
+    python -m venv venv
+    .\venv\Scripts\activate
     pip install -r requirements.txt
     ```
 
@@ -175,10 +189,18 @@ uvicorn app.main:app --reload
 └── database.db        # Generada automáticamente
 ```
 
-# Licencia
----
+## Áreas de Mejora
 
-## ⚖️ Licencia
+Aunque el sistema actual cumple con los requerimientos funcionales solicitados, para llevar esta aplicación a un entorno de **Producción Real**, se tendrían que contemplar las siguientes mejoras arquitectónicas y de infraestructura:
+
+1. **Gestión de entornos (variables de entorno)**
+2. **Migración a postgresql**
+3. **Operaciones asíncronas en base de datos**
+4. **Contenedorización (Docker)**
+5. **Mejoras en el sistema de autenticación (implementar refresh tokens)**
+6. **Visualización en la compra de un libro (sólo a nivel base de datos se hace la resta)**
+
+## Licencia
 
 Este proyecto está bajo la Licencia **MIT**. 
 Consulta el archivo [LICENSE](LICENSE) para más detalles.

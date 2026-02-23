@@ -11,7 +11,7 @@ router = APIRouter(
 
 # --- Públicas ---
 
-@router.get("/",
+@router.get("",
             response_model=List[schemas.ItemResponse],
             summary="Obtener todos los libros",
             response_description="Lista de libros disponibles")
@@ -39,7 +39,7 @@ def read_item(item_id: str, db: Session = Depends(database.get_db)):
 
 # --- Protegidas ---
 
-@router.post("/",
+@router.post("",
             response_model=schemas.ItemResponse, 
             status_code=status.HTTP_201_CREATED,
             summary="Crear un nuevo libro",
@@ -82,7 +82,6 @@ def update_item(
     """
     Modifica la información de un libro existente buscando por su ID.
     Reemplaza los datos actuales del libro con los proporcionados en la petición. 
-    Si algún campo se omite en el esquema (dependiendo de tu configuración de Pydantic), podría sobrescribirse.
     """
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Imposible realizar acción.")

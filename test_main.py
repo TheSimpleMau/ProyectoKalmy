@@ -145,7 +145,7 @@ def test_borrar_libro_admin():
     cookie = login_res.cookies.get("access_token")
     client.cookies.set("access_token", cookie)
     
-    res = client.delete("/web/items/libro-1")
+    res = client.delete("/delete/items/libro-1")
     client.cookies.clear()
     
     assert res.status_code == 200
@@ -157,7 +157,7 @@ def test_borrar_libro_empleado_falla():
     cookie = login_res.cookies.get("access_token")
 
     client.cookies.set("access_token", cookie)
-    res = client.delete("/web/items/libro-1")
+    res = client.delete("/delete/items/libro-1")
     client.cookies.clear()
     
     assert res.status_code == 403

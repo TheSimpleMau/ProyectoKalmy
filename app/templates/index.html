@@ -25,6 +25,18 @@
     </header>
 
     <main class="container">
+
+        <form action="/" method="GET" class="mb-4">
+            <div class="grid">
+                <input type="search" name="search" placeholder="Buscar libro por nombre..." value="{{ search or '' }}">
+                <button type="submit">🔍 Buscar</button>
+            </div>
+            {% if search %}
+                <div style="text-align: right;">
+                    <small><a href="/">❌ Limpiar búsqueda</a></small>
+                </div>
+            {% endif %}
+        </form>
         
         {% if user.role == 'admin' %}
         <details class="mb-4">
@@ -96,7 +108,7 @@
 
         <div class="grid" style="margin-top: 30px;">
             {% if page > 1 %}
-                <a href="/?page={{ page - 1 }}" role="button" class="secondary">⬅️ Anterior</a>
+                <a href="/?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}" role="button" class="secondary">⬅️ Anterior</a>
             {% else %}
                 <button disabled class="secondary">⬅️ Anterior</button>
             {% endif %}
@@ -106,7 +118,7 @@
             </div>
 
             {% if page < total_pages %}
-                <a href="/?page={{ page + 1 }}" role="button" class="secondary">Siguiente ➡️</a>
+                <a href="/?page={{ page + 1 }}{% if search %}&search={{ search }}{% endif %}" role="button" class="secondary">Siguiente ➡️</a>
             {% else %}
                 <button disabled class="secondary">Siguiente ➡️</button>
             {% endif %}
@@ -119,25 +131,25 @@
             if (!confirm('¿Seguro que quieres borrar este libro?')) return;
 
             try {
-                const response = await fetch(`/web/items/${itemId}`, {
+                // Hacemos el fetch a la ruta que exige tu test
+                const response = await fetch(`/delete/items/${itemId}`, {
                     method: 'DELETE'
                 });
-
-                if (response.ok) {
+                
+                if (response.status === 200) {
                     const card = document.getElementById(`item-card-${itemId}`);
                     card.classList.add('fading-out'); 
-                    
-                    setTimeout(() => {
-                        card.remove();
-                    }, 500);
+                    setTimeout(() => window.location.reload(), 500); // Recargamos para actualizar la paginación
+                } else if (response.status === 403) {
+                    alert('No tienes permisos para borrar libros.');
                 } else {
-                    alert('Error al borrar el libro (quizás no eres admin)');
+                    alert('Error al borrar el libro.');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Ocurrió un error de conexión');
             }
         }
     </script>
+
 </body>
 </html>

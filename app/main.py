@@ -1,5 +1,5 @@
 # app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from contextlib import asynccontextmanager
 from .routers import auth, items, web
@@ -33,6 +33,13 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     lifespan=lifespan
 )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    print(f"Petición: {request.method} {request.url.path}")
+    response = await call_next(request)
+    
+    return response
 
 # --- Template ---
 templates = Jinja2Templates(directory="app/templates")
